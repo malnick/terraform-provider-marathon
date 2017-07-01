@@ -2,7 +2,6 @@ package marathon
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -72,9 +71,13 @@ func resourceMarathonAppCreate(d *schema.ResourceData, meta interface{}) error {
 				return ok, "Error", err
 			}
 
-			statusPhase := fmt.Sprintf("%v", ok)
-			log.Printf("[DEBUG] App %s status received: %#v", app.ID, ok)
-			return ok, statusPhase, nil
+			status := "Pending"
+			if ok {
+				status = "Running"
+			}
+
+			log.Printf("[DEBUG] App %s status received: %#v", app.ID, status)
+			return ok, status, nil
 		},
 	}
 	_, err = stateConf.WaitForState()
