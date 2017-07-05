@@ -98,6 +98,53 @@ func resourceMarathonAppExists(d *schema.ResourceData, meta interface{}) (bool, 
 }
 
 func resourceMarathonAppUpdate(d *schema.ResourceData, meta interface{}) error {
+	conn := meta.(marathon.Marathon)
+
+	md, err := loadMarathonJSON(d)
+	if err != nil {
+		return err
+	}
+
+	var app = marathon.Application{}
+	if err := json.Unmarshal(md, &app); err != nil {
+		return err
+	}
+
+	log.Printf("[INFO] Updating app %s", app.ID)
+
+	deploymentID, err := conn.UpdateApplication(&app, true)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[INFO] Deployment %s", deploymentID.DeploymentID)
+
+	stateConf := &resource.StateChangeConf{
+		Target:  []string{"Running"},
+		Pending: []string{"Pending"},
+		Timeout: 5 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			ok, err := conn.ApplicationOK(app.ID)
+			if err != nil {
+				log.Printf("[ERROR] Received error: %#v", err)
+				return ok, "Error", err
+			}
+
+			status := "Pending"
+			if ok {
+				status = "Running"
+			}
+
+			log.Printf("[DEBUG] App %s status received: %#v", app.ID, status)
+			return ok, status, nil
+		},
+	}
+	_, err = stateConf.WaitForState()
+	if err != nil {
+		return err
+	}
+	log.Printf("[INFO] App %s updated", app.ID)
+
 	return nil
 }
 
