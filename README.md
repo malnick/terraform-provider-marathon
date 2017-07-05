@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/malnick/terraform-provider-marathon/tree/master.svg?style=svg)](https://circleci.com/gh/malnick/terraform-provider-marathon/tree/master)
+
 # Marathon Terraform Provider
 MVP: Provider + app resource
 
